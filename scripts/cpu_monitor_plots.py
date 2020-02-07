@@ -30,11 +30,11 @@ if __name__ == "__main__":
         with open(f"data/job_{n}_nodes/cpu_monitor_driver_{n}_nodes.json") as f:
             cpu_info = json.load(f)
 
-        plot_cpu_usage(cpu_info['system_usage'], save_to=f"driver_cpu_system_{n}_nodes.png", display=True,
+        plot_cpu_usage(cpu_info['system_usage'], save_to=f"driver_cpu_system_{n}_nodes.png", display=False,
                        title="System wide CPU usage on a KNL driver node",
                        xlabel="Time (seconds)",
                        ylabel="System cpu utilization (% of total number of cores)")
-        plot_cpu_usage(cpu_info['process_usage'], save_to=f"driver_cpu_process_{n}_nodes.png", display=True,
+        plot_cpu_usage(cpu_info['process_usage'], save_to=f"driver_cpu_process_{n}_nodes.png", display=False,
                        title="CPU used by the driver process on a KNL node",
                        xlabel="Time (seconds)",
                        ylabel="Driver cpu utilization (% of a single core)")
@@ -42,11 +42,11 @@ if __name__ == "__main__":
         with open(f"data/job_{n}_nodes/cpu_monitor_worker_{n}_nodes.json") as f:
             cpu_info = json.load(f)
 
-        plot_cpu_usage(cpu_info['system_usage'], save_to=f"worker_cpu_system_{n}_nodes.png", display=True,
+        plot_cpu_usage(cpu_info['system_usage'], save_to=f"worker_cpu_system_{n}_nodes.png", display=False,
                        title="System wide CPU usage on a KNL worker node",
                        xlabel="Time (seconds)",
                        ylabel="System cpu utilization (% of total number of cores)")
-        plot_cpu_usage(cpu_info['process_usage'], save_to=f"worker_cpu_process_{n}_nodes.png", display=True,
+        plot_cpu_usage(cpu_info['process_usage'], save_to=f"worker_cpu_process_{n}_nodes.png", display=False,
                        title="CPU used by the worker process on a KNL node",
                        xlabel="Time (seconds)",
                        ylabel="Worker cpu utilization (% of a single core)")

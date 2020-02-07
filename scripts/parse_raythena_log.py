@@ -79,6 +79,7 @@ def find_req_reply(file, req_pattern, rep_pattern):
             requests_by_actor[actor_id].append((timestamp, 'ranges_reply'))
     return requests_by_actor
 
+
 def find_ranges_requests_to_harvester(file):
     return find_req_reply(file, is_line_harvester_ranges_request, is_line_harvester_ranges_reply)
 
@@ -152,10 +153,9 @@ if __name__ == "__main__":
         deltas_driver_by_job.append(get_deltas(requests_by_actor))
 
     labels=[f"{n} nodes" for n in n_nodes]
-
+    ticks = [i for i in range(len(n_nodes)+1)]
     plt.figure(dpi=300)
     plt.plot(n_nodes, ray_cluster_setup)
-    plt.show()
 
     plt.figure(dpi=300)
     plt.xlabel("Delay (s)")
@@ -164,7 +164,15 @@ if __name__ == "__main__":
     plt.hist(np.array(delta_payload_start), alpha=0.3, histtype='bar', label=labels)
     plt.legend()
     plt.savefig(f"pilot_start_delay.png", dpi="figure")
-    plt.show()
+
+    plt.figure(dpi=300)
+    plt.xlabel("")
+    plt.ylabel("Delay (s))")
+    plt.title(f"Time between Slurm job start and Pilot 2 start on KNL nodes")
+    plt.boxplot(np.array(delta_payload_start), showfliers=False)
+    plt.xticks(ticks, [""] + labels)
+    plt.savefig(f"pilot_start_delay_box.png", dpi='figure')
+
 
     plt.figure(dpi=300)
     plt.xlabel("Delay (s)")
@@ -173,16 +181,30 @@ if __name__ == "__main__":
     plt.hist(np.array(delta_payload_start_raythena), alpha=0.3, histtype='bar', label=labels)
     plt.legend()
     plt.savefig(f"pilot_start_delay_raythena.png", dpi="figure")
-    plt.show()
+
+    plt.figure(dpi=300)
+    plt.xlabel("")
+    plt.ylabel("Delay (s))")
+    plt.title(f"Time between Raythena start and Pilot 2 start on KNL nodes")
+    plt.boxplot(np.array(delta_payload_start_raythena), showfliers=False)
+    plt.xticks(ticks, [""] + labels)
+    plt.savefig(f"pilot_start_delay_raythena_box.png", dpi='figure')
 
     plt.figure(dpi=300)
     plt.xlabel("Request latency (s)")
     plt.ylabel("Requests count")
     plt.title(f"Event ranges request latency between actors - driver on KNL nodes")
-    plt.hist(np.array(deltas_driver_by_job), alpha=0.3, histtype='bar', label=labels)
+    plt.hist(np.array(deltas_driver_by_job), range=(0, 2), bins=10, alpha=0.3, histtype='bar', label=labels)
     plt.legend()
-    plt.savefig(f"ranges_request_latency.png", dpi="figure")
-    plt.show()
+    plt.savefig(f"ranges_request_latency_020.png", dpi="figure")
+
+    plt.figure(dpi=300)
+    plt.xlabel("")
+    plt.ylabel("Request latency (s)")
+    plt.title(f"Event ranges request latency between actors - driver on KNL nodes")
+    plt.boxplot(np.array(deltas_driver_by_job), showfliers=False)
+    plt.xticks(ticks, [""] + labels)
+    plt.savefig(f"ranges_request_latency_020_box.png", dpi='figure')
 
     plt.figure(dpi=300)
     plt.xlabel("Request latency (s)")
@@ -191,7 +213,14 @@ if __name__ == "__main__":
     plt.hist(np.array(deltas_payload_by_job), alpha=0.3, histtype='bar', label=labels)
     plt.legend()
     plt.savefig(f"ranges_request_latency_http.png", dpi="figure")
-    plt.show()
+
+    plt.figure(dpi=300)
+    plt.xlabel("")
+    plt.ylabel("Request latency (s)")
+    plt.title(f"Event ranges request latency between Raythena - Pilot 2 on KNL nodes")
+    plt.boxplot(np.array(deltas_payload_by_job), showfliers=False)
+    plt.xticks(ticks, [""] + labels)
+    plt.savefig(f"ranges_request_latency_http_box.png", dpi='figure')
 
     plt.figure(dpi=300)
     plt.xlabel("Request latency (s)")
@@ -200,5 +229,12 @@ if __name__ == "__main__":
     plt.hist(np.array(deltas_harvester), alpha=0.3, histtype='bar', label=labels)
     plt.legend()
     plt.savefig(f"ranges_request_latency_harvester.png", dpi="figure")
-    plt.show()
+
+    plt.figure(dpi=300)
+    plt.xlabel("")
+    plt.ylabel("Request latency (s)")
+    plt.title(f"Event ranges request latency between Raythena - Harvester")
+    plt.boxplot(np.array(deltas_harvester), showfliers=False)
+    plt.xticks(ticks, [""] + labels)
+    plt.savefig(f"ranges_request_latency_harvester_box.png", dpi='figure')
 
