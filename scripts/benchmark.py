@@ -1,9 +1,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sbs
 import json
 from dateutil.parser import parse
 
+from plt_utils import formatted_figure
 
 def get_actor_occupancy(actor):
     first_event = []
@@ -35,6 +35,7 @@ def get_actor_occupancy(actor):
                 prev_stop = stop_times.pop(0)
     return wait_per_event, first_event
 
+
 def benchmark_job(n, start_time):
     with open(f"data/job_{n}_nodes/benchmark.json") as f:
         data: dict = json.load(f)
@@ -65,38 +66,23 @@ if __name__ == "__main__":
         start_delay.append(d)
 
     labels = [f"{n} nodes" for n in n_nodes]
+    labels = [""] + labels
     ticks = [i for i in range(len(n_nodes)+1)]
 
+    title_sz = 16
+    dpi = 300
 
-    plt.figure()
-    plt.xlabel("")
-    plt.ylabel("AthenaMP latency between events (s)")
-    plt.title(f"Latency between events in 2-hours event service jobs on KNL nodes")
-    plt.boxplot(np.array(lat), showfliers=False)
-    plt.xticks(ticks, [""] + labels)
-    plt.savefig(f"latency_box.png", dpi=300)
+    formatted_figure(None, title_sz, "", "AthenaMP latency between events (s)",
+                     "Latency between events in AthenaMP workers", "latency_box.png", dpi, ticks, labels, None,
+                     plt.boxplot, np.array(lat), showfliers=False)
 
-    plt.figure()
-    plt.xlabel("AthenaMP latency between events (s)")
-    plt.ylabel("Number of events")
-    plt.title(f"Latency between events in 2-hours event service jobs on KNL nodes")
-    plt.hist(np.array(lat), label=labels, alpha=0.3)
-    plt.legend()
-    plt.savefig(f"latency.png", dpi=300)
+    formatted_figure(None, title_sz, "AthenaMP latency between events (s)", "Number of events",
+                     "Latency between events in AthenaMP workers", "latency.png", dpi, None, None, True,
+                     plt.hist, np.array(lat), label=labels, alpha=0.3)
 
+    formatted_figure(None, title_sz, "", "Start delay, ray setup + AthenaMP init  (s)", "Ray + AthenaMP initialization",
+                     "delay_box.png", dpi, ticks, labels, None, plt.boxplot, np.array(start_delay), showfliers=False)
 
-    plt.figure()
-    plt.xlabel("")
-    plt.ylabel("Start delay, ray setup + AthenaMP init  (s)")
-    plt.title(f"Ray / AthenaMP init. in 2-hours event service jobs on KNL nodes")
-    plt.boxplot(np.array(start_delay), showfliers=False)
-    plt.xticks(ticks, [""] + labels)
-    plt.savefig(f"delay_box.png", dpi=300)
-
-    plt.figure()
-    plt.xlabel("Start delay, ray setup + AthenaMP init  (s)")
-    plt.ylabel("AthenaMP workers count")
-    plt.hist(np.array(start_delay), label=labels, alpha=0.3)
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(f"delay.png", dpi=300)
+    formatted_figure(None, title_sz, "Start delay, ray setup + AthenaMP init (s)", "AthenaMP workers count",
+                     "Ray + AthenaMP initialization", "delay.png", dpi, None, None, True,
+                     plt.hist, np.array(start_delay), label=labels, alpha=0.3)

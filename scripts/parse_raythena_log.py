@@ -3,8 +3,13 @@ from dateutil.parser import parse
 import matplotlib.pyplot as plt
 import numpy as np
 
+from plt_utils import formatted_figure
+
 
 def extract_timestamp(line):
+    # to parse log after commit https://github.com/PanDAWMS/ray/commit/863b15de308c70b81a5a9586ed06f56e0556ca25
+    # r = re.split("\|", line)
+    # return parse(r[-1])
     field_end = re.search("\|", line).span()[0] - 1
     return parse(line[:field_end])
 
@@ -60,23 +65,22 @@ def is_line_harvester_ranges_reply(line):
 
 
 def find_req_reply(file, req_pattern, rep_pattern):
+
     with open(file) as f:
         lines = f.readlines()
     requests_by_actor = dict()
     for line in lines:
         actor_id = req_pattern(line)
-        if actor_id:
-            if actor_id not in requests_by_actor:
-                requests_by_actor[actor_id] = []
-            timestamp = extract_timestamp(line)
-            requests_by_actor[actor_id].append((timestamp, 'ranges_request'))
+        is_reply = False
+        if not actor_id:
+            actor_id = rep_pattern(line)
+            is_reply = True
 
-        actor_id = rep_pattern(line)
         if actor_id:
             if actor_id not in requests_by_actor:
                 requests_by_actor[actor_id] = []
             timestamp = extract_timestamp(line)
-            requests_by_actor[actor_id].append((timestamp, 'ranges_reply'))
+            requests_by_actor[actor_id].append((timestamp, 'ranges_reply' if is_reply else 'ranges_request'))
     return requests_by_actor
 
 
@@ -103,6 +107,7 @@ def get_deltas(data):
             deltas_driver.append((rep[0] - req[0]).total_seconds())
     return deltas_driver
 
+
 def find_pilot_start_times(file):
     with open(file) as f:
         lines = f.readlines()
@@ -112,6 +117,7 @@ def find_pilot_start_times(file):
         if actor_id:
             requests_by_actor[actor_id] = extract_timestamp(line)
     return requests_by_actor
+
 
 def get_raythena_start_time(file):
     with open(file) as f:
@@ -126,11 +132,12 @@ if __name__ == "__main__":
     delta_payload_start = []
     delta_payload_start_raythena = []
     n_nodes = [50, 100, 199, 200]
+    # n_cores = [x * 136 for x in n_nodes]
     ray_cluster_setup = []
     jobs_start = [parse("2020-01-22 14:48:49,533"), parse("2020-01-21 05:29:43,884"), parse("2020-01-26 02:37:50,162"), parse("2020-01-25 16:29:36,593")]
 
     for n, start_time in zip(n_nodes, jobs_start):
-        file = f"data/job_{n}_nodes/raythena.log"
+        file = f"data/job_{int(n)}_nodes/raythena.log"
         raythena_start = get_raythena_start_time(file)
         cluster_setup_time = raythena_start - start_time
         ray_cluster_setup.append(cluster_setup_time.total_seconds())
@@ -153,88 +160,48 @@ if __name__ == "__main__":
         deltas_driver_by_job.append(get_deltas(requests_by_actor))
 
     labels=[f"{n} nodes" for n in n_nodes]
+    labels = [""] + labels
     ticks = [i for i in range(len(n_nodes)+1)]
-    plt.figure(dpi=300)
-    plt.plot(n_nodes, ray_cluster_setup)
+    title_sz = 16
+    dpi = 300
 
-    plt.figure(dpi=300)
-    plt.xlabel("Delay (s)")
-    plt.ylabel("Actors count")
-    plt.title(f"Time between Slurm job start and Pilot 2 start on KNL nodes")
-    plt.hist(np.array(delta_payload_start), alpha=0.3, histtype='bar', label=labels)
-    plt.legend()
-    plt.savefig(f"pilot_start_delay.png", dpi="figure")
+    formatted_figure(None, title_sz, "Delay (s)", "Actors count",
+                     "Time between Slurm job and Pilot 2 start", "pilot_start_delay.png", dpi, None, None, True,
+                     plt.hist, np.array(delta_payload_start), alpha=0.3, histtype='bar', label=labels)
 
-    plt.figure(dpi=300)
-    plt.xlabel("")
-    plt.ylabel("Delay (s))")
-    plt.title(f"Time between Slurm job start and Pilot 2 start on KNL nodes")
-    plt.boxplot(np.array(delta_payload_start), showfliers=False)
-    plt.xticks(ticks, [""] + labels)
-    plt.savefig(f"pilot_start_delay_box.png", dpi='figure')
+    formatted_figure(None, title_sz, "", "Delay (s)",
+                     "Time between Slurm job and Pilot 2 start", "pilot_start_delay_box.png", dpi, ticks, labels, False,
+                     plt.boxplot, np.array(delta_payload_start), showfliers=False)
 
+    formatted_figure(None, title_sz, "Delay (s)", "Actors count",
+                     "Time between Raythena job and Pilot 2 start", "pilot_start_delay_raythena.png", dpi, None, None, True,
+                     plt.hist, np.array(delta_payload_start_raythena), alpha=0.3, histtype='bar', label=labels)
 
-    plt.figure(dpi=300)
-    plt.xlabel("Delay (s)")
-    plt.ylabel("Actors count")
-    plt.title(f"Time between Raythena start and Pilot 2 start on KNL nodes")
-    plt.hist(np.array(delta_payload_start_raythena), alpha=0.3, histtype='bar', label=labels)
-    plt.legend()
-    plt.savefig(f"pilot_start_delay_raythena.png", dpi="figure")
+    formatted_figure(None, title_sz, "", "Delay (s)",
+                     "Time between Raythena start and Pilot 2 start", "pilot_start_delay_raythena_box.png", dpi, ticks, labels, False,
+                     plt.boxplot, np.array(delta_payload_start_raythena), showfliers=False)
 
-    plt.figure(dpi=300)
-    plt.xlabel("")
-    plt.ylabel("Delay (s))")
-    plt.title(f"Time between Raythena start and Pilot 2 start on KNL nodes")
-    plt.boxplot(np.array(delta_payload_start_raythena), showfliers=False)
-    plt.xticks(ticks, [""] + labels)
-    plt.savefig(f"pilot_start_delay_raythena_box.png", dpi='figure')
+    formatted_figure(None, title_sz, "Request latency (s)", "Requests count",
+                     "Event ranges request latency between actors - driver", "ranges_request_latency_020.png", dpi, None, None, True,
+                     plt.hist, np.array(deltas_driver_by_job), alpha=0.3, histtype='bar', label=labels)
 
-    plt.figure(dpi=300)
-    plt.xlabel("Request latency (s)")
-    plt.ylabel("Requests count")
-    plt.title(f"Event ranges request latency between actors - driver on KNL nodes")
-    plt.hist(np.array(deltas_driver_by_job), range=(0, 2), bins=10, alpha=0.3, histtype='bar', label=labels)
-    plt.legend()
-    plt.savefig(f"ranges_request_latency_020.png", dpi="figure")
+    formatted_figure(None, title_sz, "", "Request latency (s)",
+                     "Event ranges request latency between actors - driver", "ranges_request_latency_020_box.png", dpi, ticks, labels, False,
+                     plt.boxplot, np.array(deltas_driver_by_job), showfliers=False)
 
-    plt.figure(dpi=300)
-    plt.xlabel("")
-    plt.ylabel("Request latency (s)")
-    plt.title(f"Event ranges request latency between actors - driver on KNL nodes")
-    plt.boxplot(np.array(deltas_driver_by_job), showfliers=False)
-    plt.xticks(ticks, [""] + labels)
-    plt.savefig(f"ranges_request_latency_020_box.png", dpi='figure')
+    formatted_figure(None, title_sz, "Request latency (s)", "Requests count",
+                     "Event request latency between Raythena - Pilot 2", "ranges_request_latency_http.png", dpi, None, None, True,
+                     plt.hist, np.array(deltas_payload_by_job), alpha=0.3, histtype='bar', label=labels)
 
-    plt.figure(dpi=300)
-    plt.xlabel("Request latency (s)")
-    plt.ylabel("Requests count")
-    plt.title(f"Event ranges request latency between Raythena - Pilot 2 on KNL nodes")
-    plt.hist(np.array(deltas_payload_by_job), alpha=0.3, histtype='bar', label=labels)
-    plt.legend()
-    plt.savefig(f"ranges_request_latency_http.png", dpi="figure")
+    formatted_figure(None, title_sz, "", "Request latency (s)",
+                     "Event request latency between Raythena - Pilot 2", "ranges_request_latency_http_box.png", dpi, ticks, labels, False,
+                     plt.boxplot, np.array(deltas_payload_by_job), showfliers=False)
 
-    plt.figure(dpi=300)
-    plt.xlabel("")
-    plt.ylabel("Request latency (s)")
-    plt.title(f"Event ranges request latency between Raythena - Pilot 2 on KNL nodes")
-    plt.boxplot(np.array(deltas_payload_by_job), showfliers=False)
-    plt.xticks(ticks, [""] + labels)
-    plt.savefig(f"ranges_request_latency_http_box.png", dpi='figure')
+    formatted_figure(None, title_sz, "Request latency (s)", "Requests count",
+                     "Event request latency between Raythena - Harvester", "ranges_request_latency_harvester.png", dpi, None, None, True,
+                     plt.hist, np.array(deltas_harvester), alpha=0.3, histtype='bar', label=labels)
 
-    plt.figure(dpi=300)
-    plt.xlabel("Request latency (s)")
-    plt.ylabel("Requests count")
-    plt.title(f"Event ranges request latency between Raythena - Harvester")
-    plt.hist(np.array(deltas_harvester), alpha=0.3, histtype='bar', label=labels)
-    plt.legend()
-    plt.savefig(f"ranges_request_latency_harvester.png", dpi="figure")
-
-    plt.figure(dpi=300)
-    plt.xlabel("")
-    plt.ylabel("Request latency (s)")
-    plt.title(f"Event ranges request latency between Raythena - Harvester")
-    plt.boxplot(np.array(deltas_harvester), showfliers=False)
-    plt.xticks(ticks, [""] + labels)
-    plt.savefig(f"ranges_request_latency_harvester_box.png", dpi='figure')
+    formatted_figure(None, title_sz, "", "Request latency (s)",
+                     "Event request latency between Raythena - Harvester", "ranges_request_latency_harvester.png", dpi, ticks, labels, False,
+                     plt.boxplot, np.array(deltas_harvester), showfliers=False)
 
